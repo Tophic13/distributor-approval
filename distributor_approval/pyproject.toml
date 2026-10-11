@@ -1,0 +1,12 @@
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "distributor_approval"
+authors = [{ name = "Your Company", email = "you@example.com" }]
+description = "B2B distributor registration (NIF / RC / NIS) with manual approval for ERPNext"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = []
