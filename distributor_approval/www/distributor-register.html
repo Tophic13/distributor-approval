@@ -1,0 +1,91 @@
+{% extends "templates/web.html" %}
+
+{% block title %}تسجيل موزع | Distributor registration{% endblock %}
+
+{% block page_content %}
+<style>
+  .dr-card{max-width:560px;margin:2rem auto;padding:1.5rem;border:1px solid #ddd;border-radius:12px;background:#fff}
+  .dr-card h1{font-size:1.4rem;margin-bottom:.25rem}
+  .dr-card label{display:block;margin-top:.9rem;font-weight:600;font-size:.9rem}
+  .dr-card input{width:100%;padding:.55rem .7rem;border:1px solid #ccc;border-radius:8px}
+  .dr-row{display:flex;gap:.75rem}.dr-row>div{flex:1}
+  .dr-card button{margin-top:1.25rem;width:100%;padding:.7rem;border:0;border-radius:8px;background:#e8590c;color:#fff;font-weight:700;cursor:pointer}
+  .dr-card button:disabled{opacity:.6;cursor:wait}
+  #dr-msg{margin-top:1rem;padding:.7rem;border-radius:8px;display:none;white-space:pre-line}
+  #dr-msg.ok{display:block;background:#e6f4ea;color:#1e6b34}
+  #dr-msg.err{display:block;background:#fdecea;color:#a12622}
+  .dr-hint{font-size:.8rem;color:#777}
+</style>
+
+<div class="dr-card" dir="auto">
+  <h1>تسجيل موزع / Distributor registration</h1>
+  <p class="dr-hint">سيتم مراجعة وثائقك قبل تفعيل رؤية الأسعار. / Your documents are reviewed before prices become visible.</p>
+
+  <form id="dr-form" novalidate>
+    <div class="dr-row">
+      <div><label>الاسم / First name</label><input name="first_name" required></div>
+      <div><label>اللقب / Last name</label><input name="last_name" required></div>
+    </div>
+    <label>اسم الشركة / Company name</label><input name="company_name">
+    <label>البريد الإلكتروني / Email</label><input name="email" type="email" required>
+    <label>الهاتف / Mobile</label><input name="mobile" required>
+    <label>NIF</label><input name="nif" inputmode="numeric" required>
+    <label>RC</label><input name="rc" required>
+    <label>NIS</label><input name="nis" inputmode="numeric" required>
+
+    <label>وثيقة NIF / NIF document (PDF, JPG, PNG)</label>
+    <input name="nif_document" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+    <label>وثيقة RC / RC document</label>
+    <input name="rc_document" type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+    <label>وثيقة NIS / NIS document (اختياري / optional)</label>
+    <input name="nis_document" type="file" accept=".pdf,.jpg,.jpeg,.png">
+
+    <button type="submit" id="dr-submit">إرسال الطلب / Submit</button>
+    <div id="dr-msg"></div>
+  </form>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById("dr-form");
+  const btn = document.getElementById("dr-submit");
+  const box = document.getElementById("dr-msg");
+
+  function show(kind, text) { box.className = kind; box.textContent = text; }
+
+  function extractError(data) {
+    try {
+      const msgs = JSON.parse(data._server_messages || "[]");
+      if (msgs.length) {
+        return msgs.map(m => JSON.parse(m).message).join("\n").replace(/<[^>]+>/g, "");
+      }
+    } catch (e) {}
+    return data.exception || "Error";
+  }
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    box.className = ""; box.textContent = "";
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/method/distributor_approval.api.register_distributor", {
+        method: "POST",
+        headers: { "X-Frappe-CSRF-Token": window.csrf_token || "" },
+        body: new FormData(form),
+      });
+      const data = await res.json();
+      if (res.ok && data.message) {
+        form.reset();
+        show("ok", data.message.message);
+      } else {
+        show("err", extractError(data));
+      }
+    } catch (err) {
+      show("err", "Network error");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+{% endblock %}
